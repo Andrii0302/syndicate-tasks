@@ -10,14 +10,7 @@ class HelloWorld(AbstractLambda):
         pass
         
     def handler(event, context):
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({  
-                "statusCode": 200,
-                "message": "Hello from Lambda"
-            })
-        }
+        return { "statusCode": 200, "message": "Hello from Lambda" }
 
     
 
