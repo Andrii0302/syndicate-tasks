@@ -1,18 +1,40 @@
 from commons.log_helper import get_logger
 from commons.abstract_lambda import AbstractLambda
 import json
+import logging
 _LOG = get_logger(__name__)
-
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 class SqsHandler(AbstractLambda):
 
     def validate_request(self, event) -> dict:
         pass
         
+
     def handle_request(self, event, context):
-        for record in event['Records']:
-            print("Received SQS message:", json.dumps(record, indent=2))
-        return {"statusCode": 200, "body": "Message processed"}
+        """
+        Explain incoming event here
+        """
+
+        # TODO: implement business logic
+        try:
+            for record in event['Records']:
+                message_body = record['body']
+                logger.info(f"Received SQS message: {message_body}")
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps("Messages logged successfully!")
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing SQS message: {str(e)}")
+            return {
+                "statusCode": 500,
+                "body": json.dumps("Error processing messages.")
+            }
+
     
 
 HANDLER = SqsHandler()
