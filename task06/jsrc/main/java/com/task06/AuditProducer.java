@@ -64,26 +64,26 @@ public class AuditProducer implements RequestHandler<DynamodbEvent, String> {
     }
 
     private void handleInsert(DynamodbEvent.DynamodbStreamRecord record) {
-        String key = record.getDynamodb().getNewImage().get("key").getS();
+        String key = record.getDynamodb().getNewImage().get("id").getS();
         int value = Integer.parseInt(record.getDynamodb().getNewImage().get("value").getN());
 
         Item auditItem = new Item()
-                .withPrimaryKey("id", UUID.randomUUID().toString())
+                .withPrimaryKey("idd", UUID.randomUUID().toString())
                 .withString("itemKey", key)
                 .withString("modificationTime", getCurrentTimestamp())
-                .withMap("newValue", Map.of("key", key, "value", value));
+                .withMap("newValue", Map.of("id", key, "value", value));
 
         auditTable.putItem(auditItem);
     }
 
     private void handleModify(DynamodbEvent.DynamodbStreamRecord record) {
-        String key = record.getDynamodb().getNewImage().get("key").getS();
+        String key = record.getDynamodb().getNewImage().get("id").getS();
         int oldValue = Integer.parseInt(record.getDynamodb().getOldImage().get("value").getN());
         int newValue = Integer.parseInt(record.getDynamodb().getNewImage().get("value").getN());
 
         if (oldValue != newValue) {
             Item auditItem = new Item()
-                    .withPrimaryKey("id", UUID.randomUUID().toString())
+                    .withPrimaryKey("idd", UUID.randomUUID().toString())
                     .withString("itemKey", key)
                     .withString("modificationTime", getCurrentTimestamp())
                     .withString("updatedAttribute", "value")
