@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import com.syndicate.deployment.annotations.environment.EnvironmentVariable;
 import com.syndicate.deployment.annotations.environment.EnvironmentVariables;
@@ -72,9 +73,9 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
     }
 
     private String generateFilename() {
-        String timestamp = Instant.now().toString().replace(":", "-").replace(".", "-");
-        return "uuid-file-" + UUID.randomUUID() + "-" + timestamp + ".json";
-    }
+		String timestamp = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
+		return timestamp + ".json";  
+	}
 
     private void uploadToS3(String filename, ByteArrayInputStream inputStream, int contentLength) {
         ObjectMetadata metadata = new ObjectMetadata();
