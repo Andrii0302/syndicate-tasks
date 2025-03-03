@@ -28,70 +28,74 @@ import java.util.UUID;
 
 @LambdaHandler(
     lambdaName = "api_handler",
-	roleName = "api_handler-role",
-	runtime = DeploymentRuntime.JAVA17,
+    roleName = "api_handler-role",
+    runtime = DeploymentRuntime.JAVA17,
 	architecture = Architecture.ARM64,
-	isPublishVersion = false,
-	aliasName = "learn",
-	logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
+    isPublishVersion = false,
+    aliasName = "learn",
+    logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
 )
+
 @EnvironmentVariables(value = {
-	@EnvironmentVariable(key = "region", value = "${region}"),
-	@EnvironmentVariable(key = "table", value = "${target_table}")}
+		@EnvironmentVariable(key = "region", value = "${region}"),
+		@EnvironmentVariable(key = "table", value = "${target_table}")}
 )
+
 
 public class ApiHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
-    private final String targetTable = System.getenv("table");
+    private final String Targettable = System.getenv("table");  
     private final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
-    private final Table table = new DynamoDB(client).getTable(targetTable);
+    private final DynamoDB dynamoDB = new DynamoDB(client);
+    private final Table table = dynamoDB.getTable(Targettable);
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> request, Context context) {
         context.getLogger().log("Received Request: " + request);
-        
-        if (!request.containsKey("principalId") || !request.containsKey("content")) {
-            return createErrorResponse(400, "Missing required fields: principalId or content");
-        }
-        
+
+        Map<String, Object> response = new HashMap<>();
         try {
+            if (!request.containsKey("principalId") || !request.containsKey("content")) {
+                return errorResponse(400, "Missing required fields: principalId or content");
+            }
+
             int principalId = (int) request.get("principalId");
             Map<String, Object> content = (Map<String, Object>) request.get("content");
-            
+
             String eventId = UUID.randomUUID().toString();
-            String createdAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now().truncatedTo(ChronoUnit.MILLIS));
-            
-            table.putItem(new Item()
-                .withPrimaryKey("id", eventId)
-                .withNumber("principalId", principalId)
-                .withString("createdAt", createdAt)
-                .withMap("body", content));
-            
-            return createSuccessResponse(eventId, principalId, createdAt, content);
+            String createdAt = DateTimeFormatter.ISO_INSTANT
+                .format(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+
+            Item item = new Item()
+                    .withPrimaryKey("id", eventId)
+                    .withNumber("principalId", principalId)
+                    .withString("createdAt", createdAt)
+                    .withMap("body", content);
+
+            table.putItem(item);
+
+            Map<String, Object> event = new HashMap<>();
+            event.put("id", eventId);
+            event.put("principalId", principalId);
+            event.put("createdAt", createdAt);
+            event.put("body", content);
+
+            response.put("statusCode", 201);
+            response.put("event", event);
+
         } catch (Exception e) {
             context.getLogger().log("Error saving event: " + e.getMessage());
-            return createErrorResponse(500, "Internal Server Error");
+            return errorResponse(500, "Internal Server Error");
         }
-    }
 
-    private Map<String, Object> createSuccessResponse(String eventId, int principalId, String createdAt, Map<String, Object> content) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("statusCode", 201);
-        
-        Map<String, Object> event = new HashMap<>();
-        event.put("id", eventId);
-        event.put("principalId", principalId);
-        event.put("createdAt", createdAt);
-        event.put("body", content);
-        
-        response.put("event", event);
         return response;
     }
 
-    private Map<String, Object> createErrorResponse(int statusCode, String message) {
+    private Map<String, Object> errorResponse(int statusCode, String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("statusCode", statusCode);
-        response.put("body", String.format("{\"error\": \"%s\"}", message));
+        response.put("body", "{\"error\": \"" + message + "\"}");
         return response;
     }
 }
