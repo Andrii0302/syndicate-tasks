@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneOffset;
 import java.util.*;
 import com.syndicate.deployment.annotations.environment.EnvironmentVariable;
 import com.syndicate.deployment.annotations.environment.EnvironmentVariables;
@@ -73,8 +74,10 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
     }
 
     private String generateFilename() {
-		String timestamp = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
-		return timestamp + ".json";  
+		String timestamp = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+											.withZone(ZoneOffset.UTC)
+											.format(Instant.now());
+		return timestamp + ".json";
 	}
 
     private void uploadToS3(String filename, ByteArrayInputStream inputStream, int contentLength) {
