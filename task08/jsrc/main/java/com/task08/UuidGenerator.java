@@ -77,7 +77,7 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
 		String timestamp = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 											.withZone(ZoneOffset.UTC)
 											.format(Instant.now());
-		return timestamp + ".json";
+		return timestamp ;
 	}
 
     private void uploadToS3(String filename, ByteArrayInputStream inputStream, int contentLength) {
